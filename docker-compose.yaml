@@ -1,0 +1,70 @@
+services:
+
+  ###
+  # Dapr services
+  ###
+
+  placement:
+    image: daprio/dapr:edge
+    command:
+      - ./placement
+      - --port=50006
+    ports:
+      - 50006:50006
+
+  redis:
+    image: redis:6
+    ports:
+      - 6379:6379
+
+  zipkin:
+    image: openzipkin/zipkin:2
+    ports:
+      - 9411:9411
+
+  ###
+  # Services and sidecars
+  ###
+
+  server:
+    build: server/
+    image: server:dev
+    command:
+      - --port=50051
+
+  server-sidecar:
+    image: daprio/daprd:edge
+    network_mode: "service:server"
+    volumes:
+      - ./dapr/components/:/components/
+      - ./dapr/config.yaml:/config.yaml
+    command:
+      - ./daprd
+      - --app-id=server
+      - --app-port=50051
+      - --app-protocol=grpc
+      - --placement-host-address=placement:50006
+      - --config=/config.yaml
+      - --components-path=/components/
+
+  client:
+    build: client
+    image: client:dev
+    network_mode: "service:client-sidecar"
+    command:
+      - --app-id=server
+      - --addr=localhost:50052
+
+  client-sidecar:
+    image: daprio/daprd:edge
+    volumes:
+      - ./dapr/components/:/components/
+      - ./dapr/config.yaml:/config.yaml
+    command:
+      - ./daprd
+      - --app-id=client
+      - --dapr-grpc-port=50052
+      - --enable-metrics=false
+      - --placement-host-address=placement:50006
+      - --config=/config.yaml
+      - --components-path=/components/
