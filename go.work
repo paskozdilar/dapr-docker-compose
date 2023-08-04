@@ -1,0 +1,9 @@
+go 1.20
+
+use (
+	./client
+	./examples
+	./server
+)
+
+replace google.golang.org/grpc/examples v0.0.0-20230801011711-02463732635a => ./examples
