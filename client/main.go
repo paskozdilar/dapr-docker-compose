@@ -45,19 +45,24 @@ var (
 )
 
 func main() {
-	flag.Parse()
-
 	var (
 		conn *grpc.ClientConn
 		err  error
 	)
 
+	flag.Parse()
+
 	// Set up a connection to the server.
 	for {
-		conn, err = grpc.Dial(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		log.Printf("attempting to connect to: %v", *addr)
+		conn, err = grpc.Dial(*addr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock())
 		if err != nil {
 			log.Printf("did not connect: %v", err)
 			time.Sleep(time.Second)
+		} else {
+			break
 		}
 	}
 	defer conn.Close()
@@ -76,7 +81,10 @@ func main() {
 
 	// Make goroutine wait for main
 	waitc := make(chan struct{})
-	defer func() { <-waitc }()
+	defer func() {
+		log.Println("Sent all requests - waiting for responses...")
+		<-waitc
+	}()
 
 	go func() {
 		defer func() { close(waitc) }()
