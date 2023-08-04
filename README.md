@@ -4,6 +4,12 @@ Example project using Dapr in docker-compose.
 
 ## Start
 
+**NOTE:** If you have initialized Dapr in your host machine with `dapr init`,
+please uninitialize it and stop the Dapr containers:
+
+    dapr uninstall
+    docker rm --force dapr_redis dapr_zipkin
+
 To build client and server images, run:
 
     docker-compose build
